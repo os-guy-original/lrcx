@@ -1,7 +1,10 @@
 // Package tags detects and processes SRT style tags in subtitle text.
 package tags
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 // Handler transforms the inner text of a matched tag.
 type Handler func(inner string) string
@@ -31,7 +34,7 @@ func Process(text string) string {
 			if sub == nil {
 				return match
 			}
-			name, inner := sub[1], sub[2]
+			name, inner := strings.ToLower(sub[1]), sub[2]
 			if h, ok := registry[name]; ok {
 				return h(inner)
 			}
