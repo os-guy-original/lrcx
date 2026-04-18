@@ -19,10 +19,19 @@ func main() {
 	output := flag.String("o", "", "output LRC file (default: stdout)")
 	offsetMs := flag.Int("offset", 0, "time offset in milliseconds")
 	ver := flag.Bool("version", false, "print version and exit")
+	betaFeature := flag.String("beta-feature", "", "enable beta feature (e.g., yt)")
 	flag.Parse()
 
 	if *ver {
 		fmt.Println("lrcx", version)
+		return
+	}
+
+	if *betaFeature != "" {
+		fmt.Fprintln(os.Stderr, "warning: --beta-feature is experimental and may change or be removed")
+		if err := BetaFeature(*betaFeature, flag.Args(), *output, *offsetMs); err != nil {
+			fatal(err)
+		}
 		return
 	}
 
