@@ -1,3 +1,5 @@
+> 🕯️ Turkey lost children to school shootings in Siverek and Kahramanmaraş. We are aware, and we grieve. Our deepest condolences to all the families.
+
 # lrcx
 
 Convert SRT subtitle files to LRC music lyric files.
