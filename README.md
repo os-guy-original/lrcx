@@ -1,11 +1,11 @@
-# srt2lrc
+# lrcx
 
 Convert SRT subtitle files to LRC music lyric files.
 
 ## Install
 
 ```sh
-go install github.com/srt2lrc/srt2lrc/cmd/srt2lrc@latest
+go install github.com/os-guy-original/lrcx/cmd/lrcx@latest
 ```
 
 Or build from source:
@@ -18,22 +18,22 @@ make build
 
 **Pipe mode:**
 ```sh
-cat file.srt | srt2lrc > file.lrc
+cat file.srt | lrcx > file.lrc
 ```
 
 **Explicit flags:**
 ```sh
-srt2lrc -i file.srt -o file.lrc
+lrcx -i file.srt -o file.lrc
 ```
 
 **With time offset (milliseconds):**
 ```sh
-srt2lrc -i file.srt -o file.lrc --offset=-500
+lrcx -i file.srt -o file.lrc --offset=-500
 ```
 
 **Version:**
 ```sh
-srt2lrc --version
+lrcx --version
 ```
 
 ## Flags

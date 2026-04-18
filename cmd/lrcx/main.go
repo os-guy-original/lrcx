@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/srt2lrc/srt2lrc/internal/converter"
-	"github.com/srt2lrc/srt2lrc/internal/parser"
+	"github.com/os-guy-original/lrcx/internal/converter"
+	"github.com/os-guy-original/lrcx/internal/parser"
 )
 
 const version = "0.1.0"
@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	if *ver {
-		fmt.Println("srt2lrc", version)
+		fmt.Println("lrcx", version)
 		return
 	}
 
@@ -62,6 +62,6 @@ func openOutput(path string) (io.WriteCloser, error) {
 }
 
 func fatal(err error) {
-	fmt.Fprintln(os.Stderr, "srt2lrc:", err)
+	fmt.Fprintln(os.Stderr, "lrcx:", err)
 	os.Exit(1)
 }

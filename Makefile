@@ -1,5 +1,5 @@
-BIN := bin/srt2lrc
-CMD := ./cmd/srt2lrc
+BIN := bin/lrcx
+CMD := ./cmd/lrcx
 
 .PHONY: build test lint install clean
 

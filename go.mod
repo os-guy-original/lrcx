@@ -1,3 +1,3 @@
-module github.com/srt2lrc/srt2lrc
+module github.com/os-guy-original/lrcx
 
 go 1.26

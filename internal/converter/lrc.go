@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/srt2lrc/srt2lrc/internal/parser"
-	"github.com/srt2lrc/srt2lrc/internal/tags"
+	"github.com/os-guy-original/lrcx/internal/parser"
+	"github.com/os-guy-original/lrcx/internal/tags"
 )
 
 // ToLRC converts SRT blocks to LRC-formatted lines.

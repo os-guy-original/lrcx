@@ -1,4 +1,4 @@
-# Contributing to srt2lrc
+# Contributing to lrcx
 
 ## Code Style
 
