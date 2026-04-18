@@ -1,0 +1,41 @@
+1
+00:00:01,000 --> 00:00:04,000
+ConvertICO works in every language.
+Don't believe us? Watch this.
+
+2
+00:00:04,500 --> 00:00:07,500
+English: My subtitles finally work!
+
+3
+00:00:08,000 --> 00:00:11,000
+Francais: Mes sous-titres fonctionnent enfin!
+
+4
+00:00:11,500 --> 00:00:14,500
+Deutsch: Meine Untertitel funktionieren endlich!
+
+5
+00:00:15,000 --> 00:00:18,000
+Espanol: Mis subtitulos finalmente funcionan!
+
+6
+00:00:18,500 --> 00:00:21,500
+日本語: 字幕がついに機能しました！
+
+7
+00:00:22,000 --> 00:00:25,000
+中文: 我的字幕终于工作了！
+
+8
+00:00:25,500 --> 00:00:28,500
+한국어: 내 자막이 드디어 작동합니다!
+
+9
+00:00:29,000 --> 00:00:32,000
+Русский: Мои субтитры наконец работают!
+
+10
+00:00:32,500 --> 00:00:36,000
+All processed client-side.
+Your files never leave your device.

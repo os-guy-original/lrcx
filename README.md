@@ -53,7 +53,7 @@ srt2lrc --version
 | `<b>`, `<u>`, `<font ...>` | stripped (text preserved) |
 | `{\an8}`, `{\pos(...)}` | stripped entirely |
 
-Multi-line subtitle blocks are merged with ` / ` as separator.
+Multi-line subtitle blocks are joined with a space into a single LRC line.
 
 ## Roadmap
 

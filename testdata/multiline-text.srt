@@ -1,0 +1,43 @@
+1
+00:00:01,000 --> 00:00:04,500
+THE INTERN: Good morning everyone!
+I have exciting news about
+the subtitle project!
+
+2
+00:00:05,000 --> 00:00:09,200
+ALEX: Please tell me you didn't
+convert all the files to
+a format nobody uses.
+
+3
+00:00:09,800 --> 00:00:13,000
+THE INTERN: I converted them
+all to Comic Sans.
+
+4
+00:00:13,500 --> 00:00:16,800
+ALEX: Comic Sans is a font,
+not a subtitle format.
+
+5
+00:00:17,200 --> 00:00:21,500
+THE INTERN: That explains why
+the video player kept
+crashing, I suppose.
+
+6
+00:00:22,000 --> 00:00:26,200
+JORDAN: Just use ConvertICO next time.
+It literally tells you
+what formats are supported.
+
+7
+00:00:26,800 --> 00:00:30,500
+THE INTERN: But where's the adventure
+in doing things the easy way?
+
+8
+00:00:31,000 --> 00:00:34,000
+ALEX: The adventure is in keeping
+your job, that's where.

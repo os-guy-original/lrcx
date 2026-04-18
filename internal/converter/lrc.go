@@ -15,7 +15,7 @@ import (
 func ToLRC(blocks []parser.Block, offset time.Duration) []string {
 	out := make([]string, 0, len(blocks))
 	for _, b := range blocks {
-		text := tags.Process(strings.Join(b.Lines, " / "))
+		text := tags.Process(strings.Join(b.Lines, " "))
 		text = strings.TrimSpace(text)
 		if text == "" {
 			continue
