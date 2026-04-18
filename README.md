@@ -2,6 +2,10 @@
 
 # lrcx
 
+## Why?
+
+In my previous project [ncsdl](https://github.com/os-guy-original/ncsdl), most of the downloaded NCS tracks had no lyrics embedded. Even when a song had subtitles on YouTube, they came as SRT — not LRC. So I built this to fix that :/
+
 Convert SRT subtitle files to LRC music lyric files.
 
 ## Install
