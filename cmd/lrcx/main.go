@@ -48,13 +48,30 @@ func main() {
 	}
 	defer w.Close()
 
-	blocks, err := parser.ParseSRT(r)
+	blocks, err := parseAuto(r)
 	if err != nil {
 		fatal(err)
 	}
 
 	lines := converter.ToLRC(blocks, time.Duration(*offsetMs)*time.Millisecond)
 	fmt.Fprintln(w, strings.Join(lines, "\n"))
+}
+
+// parseAuto detects format and parses accordingly.
+func parseAuto(r io.Reader) ([]parser.Block, error) {
+	// Read all content to detect format
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	content := string(data)
+
+	// Detect VTT by header
+	if strings.HasPrefix(strings.TrimSpace(content), "WEBVTT") {
+		return parser.ParseVTT(strings.NewReader(content))
+	}
+	// Default to SRT
+	return parser.ParseSRT(strings.NewReader(content))
 }
 
 func openInput(path string) (io.ReadCloser, error) {
