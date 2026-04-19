@@ -6,6 +6,16 @@ import (
 	"github.com/os-guy-original/lrcx/internal/beta/yt"
 )
 
+// betaFeatureName returns a human-readable name for a beta feature key.
+func betaFeatureName(name string) string {
+	switch name {
+	case "yt":
+		return "yt-dlp integration"
+	default:
+		return name
+	}
+}
+
 // BetaFeature executes a beta feature by name.
 func BetaFeature(name string, args []string, outputPath string, offsetMs int, interactive bool) error {
 	switch name {

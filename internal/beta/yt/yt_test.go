@@ -66,8 +66,8 @@ de       German  vtt, srt
 	}
 }
 
-func TestRun_InvalidURL(t *testing.T) {
-	err := Run("not-a-url", "", 0)
+func TestRunWithOpts_InvalidURL(t *testing.T) {
+	err := RunWithOpts(Options{URL: "not-a-url", SubLang: "en"})
 	if err == nil {
 		t.Error("expected error for invalid URL")
 	}

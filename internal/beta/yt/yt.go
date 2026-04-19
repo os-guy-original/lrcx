@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -23,22 +24,11 @@ type SubtitleInfo struct {
 
 // Options configures the yt-dlp subtitle fetch.
 type Options struct {
-	URL      string // YouTube video URL
-	Output   string // Output file path (empty = stdout)
-	OffsetMs int    // Time offset in milliseconds
-	SubLang  string // Subtitle language (default: en)
-	AutoSubs bool   // Use auto-generated subtitles if manual not available
-	Interactive bool // Prompt user to select subtitle
-}
-
-// Run fetches subtitles from a YouTube URL and converts to LRC.
-func Run(urlStr, outputPath string, offsetMs int) error {
-	return RunWithOpts(Options{
-		URL:      urlStr,
-		Output:   outputPath,
-		OffsetMs: offsetMs,
-		SubLang:  "en",
-	})
+	URL         string // YouTube video URL
+	Output      string // Output file path (empty = stdout)
+	OffsetMs    int    // Time offset in milliseconds
+	SubLang     string // Subtitle language (default: en)
+	Interactive bool   // Prompt user to select subtitle
 }
 
 // RunWithOpts fetches subtitles with full options.
@@ -62,28 +52,32 @@ func RunWithOpts(opts Options) error {
 		}
 		selected := promptSelect(subs)
 		opts.SubLang = selected.Lang
-		opts.AutoSubs = selected.Type == "auto"
 	}
 
-	tmp, err := os.CreateTemp("", "lrcx-*.vtt")
+	tmp, err := os.CreateTemp("", "lrcx-*")
 	if err != nil {
 		return err
 	}
-	tmpPath := tmp.Name()
+	tmpBase := tmp.Name()
 	tmp.Close()
-	defer os.Remove(tmpPath)
+	os.Remove(tmpBase)
+	defer func() {
+		// Clean up any files yt-dlp wrote (e.g. <base>.<lang>.vtt)
+		if matches, _ := filepath.Glob(tmpBase + ".*"); matches != nil {
+			for _, m := range matches {
+				os.Remove(m)
+			}
+		}
+	}()
 
 	args := []string{
 		"--write-subs",
 		"--skip-download",
 		"--sub-lang", opts.SubLang,
 		"--sub-format", "vtt",
-		"-o", strings.TrimSuffix(tmpPath, ".vtt"),
+		"-o", tmpBase,
+		opts.URL,
 	}
-	if opts.AutoSubs {
-		args = append(args, "--write-auto-subs")
-	}
-	args = append(args, opts.URL)
 
 	cmd := exec.Command("yt-dlp", args...)
 	cmd.Stderr = os.Stderr
@@ -91,9 +85,16 @@ func RunWithOpts(opts Options) error {
 		return fmt.Errorf("yt-dlp failed: %w", err)
 	}
 
-	r, err := os.Open(tmpPath)
+	// yt-dlp writes <base>.<lang>.vtt, not <base>.vtt
+	matches, _ := filepath.Glob(tmpBase + "*.vtt")
+	if len(matches) == 0 {
+		return fmt.Errorf("subtitle file not created (maybe no subs available for lang=%s)", opts.SubLang)
+	}
+	vttPath := matches[0]
+
+	r, err := os.Open(vttPath)
 	if err != nil {
-		return fmt.Errorf("subtitle file not created (maybe no subs available for lang=%s): %w", opts.SubLang, err)
+		return fmt.Errorf("cannot open subtitle file: %w", err)
 	}
 	defer r.Close()
 
@@ -158,16 +159,11 @@ func parseListSubs(output string) []SubtitleInfo {
 			continue
 		}
 
-		// Parse lines like:
-		// Manual: "en       English vtt, srt, ..."
-		// Auto:   "en              vtt"  (name empty)
-		// Auto:   "en-en      English from English  vtt, srt, ..."
 		fields := strings.Fields(line)
 		if len(fields) >= 1 && !strings.HasPrefix(fields[0], "[") {
 			lang := fields[0]
-			name := lang // default to lang code
+			name := lang
 
-			// Look for name (field that's not a format list)
 			for i := 1; i < len(fields); i++ {
 				f := fields[i]
 				if !strings.Contains(f, "vtt") && !strings.Contains(f, "srt") && !strings.Contains(f, ",") && f != "from" {
