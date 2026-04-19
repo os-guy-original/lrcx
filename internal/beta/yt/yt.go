@@ -43,7 +43,9 @@ func RunWithOpts(opts Options) error {
 
 	// If interactive, list and select
 	if opts.Interactive {
+		stop := spin("Getting the subtitles")
 		subs, err := ListSubtitles(opts.URL)
+		stop(err)
 		if err != nil {
 			return err
 		}
@@ -218,4 +220,32 @@ func validateURL(raw string) error {
 		return fmt.Errorf("URL missing host")
 	}
 	return nil
+}
+
+// spin starts a spinner on stderr with the given message.
+// Call the returned stop func with the operation error when done.
+// On success it clears the line; on error it morphs into the error text.
+func spin(msg string) func(error) {
+	frames := []rune{'⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'}
+	done := make(chan struct{})
+	go func() {
+		for i := 0; ; i++ {
+			select {
+			case <-done:
+				return
+			default:
+				fmt.Fprintf(os.Stderr, "\r%c %s...", frames[i%len(frames)], msg)
+				time.Sleep(80 * time.Millisecond)
+			}
+		}
+	}()
+	return func(err error) {
+		close(done)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "\r✗ %s\n", err)
+		} else {
+			// Clear the spinner line
+			fmt.Fprintf(os.Stderr, "\r\033[K")
+		}
+	}
 }
