@@ -42,27 +42,11 @@ de       German  vtt, srt
 `
 	subs := parseListSubs(output)
 
-	if len(subs) < 4 {
-		t.Fatalf("expected at least 4 subtitles, got %d", len(subs))
+	if len(subs) != 2 {
+		t.Fatalf("expected 2 manual subtitles, got %d", len(subs))
 	}
-
-	// Check auto captions
-	if subs[0].Type != "auto" || subs[0].Lang != "en" {
-		t.Errorf("expected auto en, got %+v", subs[0])
-	}
-
-	// Check manual subtitles
-	var manualEn *SubtitleInfo
-	for i := range subs {
-		if subs[i].Type == "manual" && subs[i].Lang == "en" {
-			manualEn = &subs[i]
-			break
-		}
-	}
-	if manualEn == nil {
-		t.Error("expected to find manual English subtitle")
-	} else if manualEn.Name != "English" {
-		t.Errorf("expected name 'English', got %q", manualEn.Name)
+	if subs[0].Type != "manual" || subs[0].Lang != "en" || subs[0].Name != "English" {
+		t.Errorf("unexpected first sub: %+v", subs[0])
 	}
 }
 

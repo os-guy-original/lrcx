@@ -150,7 +150,7 @@ func parseListSubs(output string) []SubtitleInfo {
 			continue
 		}
 
-		if section == "" {
+		if section != "manual" {
 			continue
 		}
 
