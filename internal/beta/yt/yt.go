@@ -44,7 +44,7 @@ func RunWithOpts(opts Options) error {
 	}
 
 	if opts.Interactive {
-		stop := ui.Spin("Getting the subtitles")
+		stop := ui.Spin("Getting the subtitles", opts.Verbose)
 		subs, err := listSubtitles(opts.URL, opts.Verbose)
 		stop(err)
 		if err != nil {
@@ -72,7 +72,7 @@ func RunWithOpts(opts Options) error {
 		}
 	}()
 
-	stop := ui.Spin("Downloading subtitles")
+	stop := ui.Spin("Downloading subtitles", opts.Verbose)
 	err = ytdlp(opts.Verbose, "--write-subs", "--skip-download",
 		"--sub-lang", opts.SubLang, "--sub-format", "vtt",
 		"-o", tmpBase, opts.URL)

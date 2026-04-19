@@ -12,7 +12,12 @@ var frames = []rune{'⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇
 // Spin displays an animated spinner with msg on stderr.
 // Call the returned stop func with the operation error when done:
 // on success the line is cleared; on error it morphs into the error.
-func Spin(msg string) func(error) {
+// When verbose is true the spinner is suppressed (output flows freely).
+func Spin(msg string, verbose bool) func(error) {
+	if verbose {
+		fmt.Fprintf(os.Stderr, "%s...\n", msg)
+		return func(error) {}
+	}
 	done := make(chan struct{})
 	go func() {
 		for i := 0; ; i++ {
