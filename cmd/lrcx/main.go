@@ -24,6 +24,17 @@ func main() {
 	verbose := flag.Bool("verbose", false, "show output from third-party tools")
 	flag.Parse()
 
+	// flag.Parse stops at the first non-flag argument, so --verbose placed after
+	// a URL would be silently ignored. Re-check os.Args directly.
+	if !*verbose {
+		for _, a := range os.Args[1:] {
+			if a == "--verbose" || a == "-verbose" {
+				*verbose = true
+				break
+			}
+		}
+	}
+
 	if *ver {
 		fmt.Println("lrcx", version)
 		return
