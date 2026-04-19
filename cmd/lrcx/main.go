@@ -21,6 +21,7 @@ func main() {
 	ver := flag.Bool("version", false, "print version and exit")
 	betaFeature := flag.String("beta-feature", "", "enable beta feature (e.g., yt)")
 	interactive := flag.Bool("interactive", false, "prompt for subtitle selection")
+	verbose := flag.Bool("verbose", false, "show output from third-party tools")
 	flag.Parse()
 
 	if *ver {
@@ -30,7 +31,7 @@ func main() {
 
 	if *betaFeature != "" {
 		fmt.Fprintf(os.Stderr, "warning: %s is experimental and may change or be removed\n", betaFeatureName(*betaFeature))
-		if err := BetaFeature(*betaFeature, flag.Args(), *output, *offsetMs, *interactive); err != nil {
+		if err := BetaFeature(*betaFeature, flag.Args(), *output, *offsetMs, *interactive, *verbose); err != nil {
 			fatal(err)
 		}
 		return
