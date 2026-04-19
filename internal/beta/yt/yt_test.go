@@ -29,24 +29,40 @@ func TestValidateURL(t *testing.T) {
 	}
 }
 
-func TestRun_BasicVideo(t *testing.T) {
-	err := RunWithOpts(Options{
-		URL:      "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-		AutoSubs: true,
-	})
-	if err != nil {
-		t.Skipf("skipping: %v", err)
-	}
-}
+func TestParseListSubs(t *testing.T) {
+	output := `[info] Available automatic captions for jNQXAC9IVRw:
+Language   Name                               Formats
+en                                            vtt
+de                                            vtt
+ab-en      Abkhazian from English             vtt, srt
+[info] Available subtitles for jNQXAC9IVRw:
+Language Name    Formats
+en       English vtt, srt
+de       German  vtt, srt
+`
+	subs := parseListSubs(output)
 
-func TestRun_WithOffset(t *testing.T) {
-	err := RunWithOpts(Options{
-		URL:      "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-		OffsetMs: 500,
-		AutoSubs: true,
-	})
-	if err != nil {
-		t.Skipf("skipping: %v", err)
+	if len(subs) < 4 {
+		t.Fatalf("expected at least 4 subtitles, got %d", len(subs))
+	}
+
+	// Check auto captions
+	if subs[0].Type != "auto" || subs[0].Lang != "en" {
+		t.Errorf("expected auto en, got %+v", subs[0])
+	}
+
+	// Check manual subtitles
+	var manualEn *SubtitleInfo
+	for i := range subs {
+		if subs[i].Type == "manual" && subs[i].Lang == "en" {
+			manualEn = &subs[i]
+			break
+		}
+	}
+	if manualEn == nil {
+		t.Error("expected to find manual English subtitle")
+	} else if manualEn.Name != "English" {
+		t.Errorf("expected name 'English', got %q", manualEn.Name)
 	}
 }
 
@@ -54,26 +70,5 @@ func TestRun_InvalidURL(t *testing.T) {
 	err := Run("not-a-url", "", 0)
 	if err == nil {
 		t.Error("expected error for invalid URL")
-	}
-}
-
-func TestRunWithOpts_AutoSubs(t *testing.T) {
-	err := RunWithOpts(Options{
-		URL:      "https://www.youtube.com/watch?v=jNQXAC9IVRw",
-		SubLang:  "en",
-		AutoSubs: true,
-	})
-	if err != nil {
-		t.Skipf("skipping: %v", err)
-	}
-}
-
-func TestRunWithOpts_CustomLang(t *testing.T) {
-	err := RunWithOpts(Options{
-		URL:     "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-		SubLang: "en",
-	})
-	if err != nil {
-		t.Skipf("skipping: %v", err)
 	}
 }
