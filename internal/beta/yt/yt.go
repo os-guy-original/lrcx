@@ -65,7 +65,7 @@ func RunWithOpts(opts Options) error {
 		opts.AutoSubs = selected.Type == "auto"
 	}
 
-	tmp, err := os.CreateTemp("", "lrcx-*.srt")
+	tmp, err := os.CreateTemp("", "lrcx-*.vtt")
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,8 @@ func RunWithOpts(opts Options) error {
 		"--write-subs",
 		"--skip-download",
 		"--sub-lang", opts.SubLang,
-		"-o", strings.TrimSuffix(tmpPath, ".srt"),
+		"--sub-format", "vtt",
+		"-o", strings.TrimSuffix(tmpPath, ".vtt"),
 	}
 	if opts.AutoSubs {
 		args = append(args, "--write-auto-subs")
@@ -96,7 +97,7 @@ func RunWithOpts(opts Options) error {
 	}
 	defer r.Close()
 
-	blocks, err := parser.ParseSRT(r)
+	blocks, err := parser.ParseVTT(r)
 	if err != nil {
 		return err
 	}
