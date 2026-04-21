@@ -3,6 +3,7 @@ package yt
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"io"
 	"net/url"
@@ -17,6 +18,9 @@ import (
 	"github.com/os-guy-original/lrcx/internal/ui"
 )
 
+// Default timeout for yt-dlp operations.
+const defaultTimeout = 60 * time.Second
+
 // SubtitleInfo represents available subtitle info.
 type SubtitleInfo struct {
 	Lang string
@@ -26,16 +30,27 @@ type SubtitleInfo struct {
 
 // Options configures the yt-dlp subtitle fetch.
 type Options struct {
-	URL         string
-	Output      string
-	OffsetMs    int
-	SubLang     string
-	Interactive bool
-	Verbose     bool
+	URL          string
+	Output       string
+	OffsetMs     int
+	SubLang      string
+	Interactive  bool
+	Verbose      bool
+	AutoCaptions bool   // Include auto-generated captions
+	Timeout      time.Duration // Operation timeout (0 = default)
 }
 
 // RunWithOpts fetches subtitles with full options.
 func RunWithOpts(opts Options) error {
+	// Set default timeout
+	if opts.Timeout == 0 {
+		opts.Timeout = defaultTimeout
+	}
+
+	// Create context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), opts.Timeout)
+	defer cancel()
+
 	if err := validateURL(opts.URL); err != nil {
 		return err
 	}
@@ -44,22 +59,25 @@ func RunWithOpts(opts Options) error {
 	}
 
 	if opts.Interactive {
-		stop := ui.Spin("Getting the subtitles", opts.Verbose)
-		subs, err := listSubtitles(opts.URL, opts.Verbose)
+		stop := ui.Spin("Getting available subtitles", opts.Verbose)
+		subs, err := listSubtitles(ctx, opts.URL, opts.AutoCaptions, opts.Verbose)
 		stop(err)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to list subtitles: %w", err)
 		}
 		if len(subs) == 0 {
-			return fmt.Errorf("no subtitles available")
+			return fmt.Errorf("no subtitles available for this video")
 		}
 		selected := promptSelect(subs)
 		opts.SubLang = selected.Lang
+		if selected.Type == "auto" {
+			opts.AutoCaptions = true
+		}
 	}
 
 	tmp, err := os.CreateTemp("", "lrcx-*")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpBase := tmp.Name()
 	tmp.Close()
@@ -73,17 +91,25 @@ func RunWithOpts(opts Options) error {
 	}()
 
 	stop := ui.Spin("Downloading subtitles", opts.Verbose)
-	err = ytdlp(opts.Verbose, "--write-subs", "--skip-download",
+	subFlag := "--write-subs"
+	if opts.AutoCaptions {
+		subFlag = "--write-auto-subs"
+	}
+	err = ytdlp(ctx, opts.Verbose, subFlag, "--skip-download",
 		"--sub-lang", opts.SubLang, "--sub-format", "vtt",
 		"-o", tmpBase, opts.URL)
 	stop(err)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to download subtitles: %w", err)
 	}
 
 	matches, _ := filepath.Glob(tmpBase + "*.vtt")
 	if len(matches) == 0 {
-		return fmt.Errorf("subtitle file not created (maybe no subs available for lang=%s)", opts.SubLang)
+		langHint := fmt.Sprintf("lang=%s", opts.SubLang)
+		if opts.AutoCaptions {
+			langHint += " (auto-generated)"
+		}
+		return fmt.Errorf("subtitle file not created (no subtitles for %s)", langHint)
 	}
 
 	r, err := os.Open(matches[0])
@@ -94,10 +120,10 @@ func RunWithOpts(opts Options) error {
 
 	blocks, err := parser.ParseVTT(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse subtitle file: %w", err)
 	}
 	if len(blocks) == 0 {
-		return fmt.Errorf("no subtitle blocks found")
+		return fmt.Errorf("no subtitle blocks found in downloaded file")
 	}
 
 	var w *os.File
@@ -106,7 +132,7 @@ func RunWithOpts(opts Options) error {
 	} else {
 		w, err = os.Create(opts.Output)
 		if err != nil {
-			return err
+			return fmt.Errorf("cannot create output file: %w", err)
 		}
 		defer w.Close()
 	}
@@ -117,22 +143,25 @@ func RunWithOpts(opts Options) error {
 }
 
 // ytdlp runs yt-dlp with the given args, routing stderr to os.Stderr only when verbose.
-func ytdlp(verbose bool, args ...string) error {
-	cmd := exec.Command("yt-dlp", args...)
+func ytdlp(ctx context.Context, verbose bool, args ...string) error {
+	cmd := exec.CommandContext(ctx, "yt-dlp", args...)
 	if verbose {
 		cmd.Stderr = os.Stderr
 	} else {
 		cmd.Stderr = io.Discard
 	}
 	if err := cmd.Run(); err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return fmt.Errorf("yt-dlp timed out after %v", defaultTimeout)
+		}
 		return fmt.Errorf("yt-dlp failed: %w", err)
 	}
 	return nil
 }
 
-// listSubtitles fetches available manual subtitles for a URL.
-func listSubtitles(urlStr string, verbose bool) ([]SubtitleInfo, error) {
-	cmd := exec.Command("yt-dlp", "--list-subs", urlStr)
+// listSubtitles fetches available subtitles for a URL.
+func listSubtitles(ctx context.Context, urlStr string, includeAuto, verbose bool) ([]SubtitleInfo, error) {
+	cmd := exec.CommandContext(ctx, "yt-dlp", "--list-subs", urlStr)
 	var stderr io.Writer = io.Discard
 	if verbose {
 		stderr = os.Stderr
@@ -140,27 +169,33 @@ func listSubtitles(urlStr string, verbose bool) ([]SubtitleInfo, error) {
 	cmd.Stderr = stderr
 	out, err := cmd.Output()
 	if err != nil {
+		if ctx.Err() == context.DeadlineExceeded {
+			return nil, fmt.Errorf("timed out while listing subtitles")
+		}
 		return nil, fmt.Errorf("yt-dlp failed: %w", err)
 	}
-	return parseListSubs(string(out)), nil
+	return parseListSubs(string(out), includeAuto), nil
 }
 
-func parseListSubs(output string) []SubtitleInfo {
+func parseListSubs(output string, includeAuto bool) []SubtitleInfo {
 	var subs []SubtitleInfo
-	var inManual bool
+	var inAuto bool
 
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.Contains(line, "Available subtitles for") {
-			inManual = true
-			continue
-		}
 		if strings.Contains(line, "Available automatic captions for") {
-			inManual = false
+			inAuto = true
 			continue
 		}
-		if !inManual || strings.HasPrefix(line, "Language") {
+		if strings.Contains(line, "Available subtitles for") {
+			inAuto = false
+			continue
+		}
+		if strings.HasPrefix(line, "Language") {
+			continue
+		}
+		if inAuto && !includeAuto {
 			continue
 		}
 		fields := strings.Fields(line)
@@ -174,7 +209,11 @@ func parseListSubs(output string) []SubtitleInfo {
 				break
 			}
 		}
-		subs = append(subs, SubtitleInfo{Lang: lang, Name: name, Type: "manual"})
+		subType := "manual"
+		if inAuto {
+			subType = "auto"
+		}
+		subs = append(subs, SubtitleInfo{Lang: lang, Name: name, Type: subType})
 	}
 	return subs
 }
@@ -182,7 +221,11 @@ func parseListSubs(output string) []SubtitleInfo {
 func promptSelect(subs []SubtitleInfo) SubtitleInfo {
 	fmt.Fprintln(os.Stderr, "Available subtitles:")
 	for i, s := range subs {
-		fmt.Fprintf(os.Stderr, "  %d) [%s] %s\n", i+1, s.Lang, s.Name)
+		typeMarker := ""
+		if s.Type == "auto" {
+			typeMarker = " (auto)"
+		}
+		fmt.Fprintf(os.Stderr, "  %d) [%s] %s%s\n", i+1, s.Lang, s.Name, typeMarker)
 	}
 	reader := bufio.NewReader(os.Stdin)
 	for {

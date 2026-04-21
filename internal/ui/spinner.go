@@ -33,7 +33,35 @@ func Spin(msg string, verbose bool) func(error) {
 	return func(err error) {
 		close(done)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "\r✗ %s\n", err)
+			fmt.Fprintf(os.Stderr, "\r✗ %s: %v\n", msg, err)
+		} else {
+			fmt.Fprint(os.Stderr, "\r\033[K")
+		}
+	}
+}
+
+// SpinSuccess displays an animated spinner and shows success message on completion.
+func SpinSuccess(msg string, verbose bool) func(string) {
+	if verbose {
+		fmt.Fprintf(os.Stderr, "%s...\n", msg)
+		return func(string) {}
+	}
+	done := make(chan struct{})
+	go func() {
+		for i := 0; ; i++ {
+			select {
+			case <-done:
+				return
+			default:
+				fmt.Fprintf(os.Stderr, "\r%c %s...", frames[i%len(frames)], msg)
+				time.Sleep(80 * time.Millisecond)
+			}
+		}
+	}()
+	return func(successMsg string) {
+		close(done)
+		if successMsg != "" {
+			fmt.Fprintf(os.Stderr, "\r✓ %s\n", successMsg)
 		} else {
 			fmt.Fprint(os.Stderr, "\r\033[K")
 		}
